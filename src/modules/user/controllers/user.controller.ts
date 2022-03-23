@@ -3,12 +3,15 @@ import {
   Controller,
   Get,
   Post,
+  Req,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { map, Observable } from 'rxjs';
+import { from, map, Observable, of } from 'rxjs';
+import { CustomExpressRequest } from 'src/types/custom-express-request.interface';
 import { CreateUserDTO } from '../DTOs/create-user.dto';
 import { LoginUserDTO } from '../DTOs/login-user.dto';
+import { UserEntity } from '../entities/user.entity';
 import { UserService } from '../services/user.service';
 import { UserResponse } from '../types/user-response.interface';
 
@@ -36,5 +39,13 @@ export class UserController {
     return this._userService
       .loginUser(loginUserDTO)
       .pipe(map((user) => this._userService.buildUserResponse(user)));
+  }
+
+  @Get('user')
+  getCurrentUser(
+    @Req() request: CustomExpressRequest,
+  ): Observable<UserResponse> {
+    // console.log(request.user);
+    return of(this._userService.buildUserResponse(request.user));
   }
 }

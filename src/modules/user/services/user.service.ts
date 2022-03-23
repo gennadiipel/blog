@@ -67,6 +67,8 @@ export class UserService {
               );
             }
 
+            delete user.password;
+
             return user;
           }),
         );
@@ -79,7 +81,18 @@ export class UserService {
   }
 
   findOneByUsername(username: string): Observable<UserEntity> {
-    return from(this._userRepository.findOne({ username }));
+    return from(
+      this._userRepository.findOne(
+        {
+          username,
+        },
+        { select: ['id', 'username', 'email', 'image', 'status', 'password'] },
+      ),
+    );
+  }
+
+  findById(id: number): Observable<UserEntity> {
+    return from(this._userRepository.findOne({ id }));
   }
 
   buildUserResponse(user: UserEntity): UserResponse {
