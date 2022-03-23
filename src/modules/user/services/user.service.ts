@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, Observable, of } from 'rxjs';
+import { from, map, mergeMap, Observable } from 'rxjs';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from '../DTOs/create-user.dto';
 import { UserEntity } from '../entities/user.entity';
 import { sign } from 'jsonwebtoken';
 import { JWT_SECRET } from 'src/config';
-import { UserResponseInterface } from '../types/user-response.interface';
+import { UserResponse } from '../types/user-response.interface';
+import { LoginUserDTO } from '../DTOs/login-user.dto';
+import { compare } from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -17,11 +19,70 @@ export class UserService {
 
   createUser(createUserDTO: CreateUserDTO): Observable<UserEntity> {
     const newUser: UserEntity = new UserEntity();
-    Object.assign(newUser, createUserDTO);
-    return from(this._userRepository.save(newUser));
+
+    return this.findOneByEmail(createUserDTO.email).pipe(
+      mergeMap((user) => {
+        if (user) {
+          throw new HttpException(
+            'Email is already taken',
+            HttpStatus.UNPROCESSABLE_ENTITY,
+          );
+        }
+
+        return this.findOneByUsername(createUserDTO.username);
+      }),
+      mergeMap((user) => {
+        console.log(user);
+
+        if (user) {
+          throw new HttpException(
+            'Username is already taken',
+            HttpStatus.UNPROCESSABLE_ENTITY,
+          );
+        }
+
+        Object.assign(newUser, createUserDTO);
+
+        return from(this._userRepository.save(newUser));
+      }),
+    );
   }
 
-  buildUserResponse(user: UserEntity): UserResponseInterface {
+  loginUser(loginUserDTO: LoginUserDTO): Observable<UserEntity> {
+    return this.findOneByUsername(loginUserDTO.username).pipe(
+      mergeMap((user) => {
+        if (!user) {
+          throw new HttpException(
+            'User was not found',
+            HttpStatus.UNAUTHORIZED,
+          );
+        }
+
+        return from(compare(loginUserDTO.password, user.password)).pipe(
+          map((isPasswordCorrect: boolean) => {
+            if (!isPasswordCorrect) {
+              throw new HttpException(
+                'Password incorrect',
+                HttpStatus.UNAUTHORIZED,
+              );
+            }
+
+            return user;
+          }),
+        );
+      }),
+    );
+  }
+
+  findOneByEmail(email: string): Observable<UserEntity> {
+    return from(this._userRepository.findOne({ email }));
+  }
+
+  findOneByUsername(username: string): Observable<UserEntity> {
+    return from(this._userRepository.findOne({ username }));
+  }
+
+  buildUserResponse(user: UserEntity): UserResponse {
     return {
       user: {
         ...user,
