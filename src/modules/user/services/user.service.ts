@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { from, map, mergeMap, Observable } from 'rxjs';
+import { from, map, mergeMap, Observable, switchMap } from 'rxjs';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from '../DTOs/create-user.dto';
 import { UserEntity } from '../entities/user.entity';
@@ -9,6 +9,7 @@ import { JWT_SECRET } from 'src/config';
 import { UserResponse } from '../types/user-response.interface';
 import { LoginUserDTO } from '../DTOs/login-user.dto';
 import { compare } from 'bcrypt';
+import { UpdateUserDTO } from '../DTOs/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -112,6 +113,29 @@ export class UserService {
         id: user.id,
       },
       JWT_SECRET,
+    );
+  }
+
+  updateUser(
+    userId: number,
+    updateUserDTO: UpdateUserDTO,
+  ): Observable<UserEntity> {
+    return this.findOneByEmail(updateUserDTO.email).pipe(
+      switchMap((user: UserEntity) => {
+        if (user) {
+          throw new HttpException(
+            `Email ${updateUserDTO.email} is already taken`,
+            HttpStatus.UNPROCESSABLE_ENTITY,
+          );
+        }
+
+        return this._userRepository.findOne(userId);
+      }),
+      switchMap((user: UserEntity) => {
+        Object.assign(user, updateUserDTO);
+
+        return this._userRepository.save(user);
+      }),
     );
   }
 }
