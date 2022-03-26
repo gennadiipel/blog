@@ -2,12 +2,13 @@ import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ArticleModule } from './modules/article/article.module';
 import { TagModule } from './modules/tag/tag.module';
 import { AuthMiddleware } from './modules/user/middlewares/auth.middleware';
 import { UserModule } from './modules/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(), TagModule, UserModule],
+  imports: [TypeOrmModule.forRoot(), TagModule, UserModule, ArticleModule],
   controllers: [AppController],
   providers: [AppService],
 })
