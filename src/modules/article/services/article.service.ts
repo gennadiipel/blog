@@ -41,7 +41,7 @@ export class ArticleService {
 
     article.author = user;
 
-    return from(this.getAndGenerateUrlSlug(article)).pipe(
+    return from(this.generateUrlSlug(article)).pipe(
       mergeMap((articleWithUrlSlug: ArticleEntity) => {
         return from(this._articleRepository.save(articleWithUrlSlug));
       }),
@@ -64,7 +64,7 @@ export class ArticleService {
     );
   }
 
-  getAndGenerateUrlSlug(article: ArticleEntity): Observable<ArticleEntity> {
+  generateUrlSlug(article: ArticleEntity): Observable<ArticleEntity> {
     return this.getByTitleSlug(article.titleSlug).pipe(
       mergeMap((articles: ArticleEntity[]) => {
         if (articles.length) {
@@ -103,6 +103,27 @@ export class ArticleService {
     createArticleDTO: CreateArticleDTO,
     authorId: number,
   ): Observable<ArticleEntity> {
+    const article: ArticleEntity = new ArticleEntity();
+
+    Object.assign(article, createArticleDTO);
+
+    if (!createArticleDTO.tagList) {
+      article.tagList = [];
+    }
+
+    article.titleSlug = this.generateSlugString(createArticleDTO.title);
+    article.urlSlug = article.titleSlug;
+
+    /*return this.generateUrlSlug(article).pipe(
+      mergeMap((newArticle: ArticleEntity) => {
+        if (newArticle.author.)
+      })
+    )*/
+
     return {} as any;
+  }
+
+  generateSlugString(title: string): string {
+    return slugify(title, { lower: true });
   }
 }
