@@ -16,7 +16,10 @@ export class ArticleEntity {
   title: string;
 
   @Column()
-  slug: string;
+  titleSlug: string;
+
+  @Column()
+  urlSlug: string;
 
   @Column({ default: '' })
   excerpt: string;
