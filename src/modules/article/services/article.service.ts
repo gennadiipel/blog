@@ -68,7 +68,20 @@ export class ArticleService {
     return this.getByTitleSlug(article.titleSlug).pipe(
       mergeMap((articles: ArticleEntity[]) => {
         if (articles.length) {
-          article.urlSlug += '-' + articles.length;
+          articles.sort((articleA: ArticleEntity, articleB: ArticleEntity) => {
+            const articleASlugId: number =
+              +articleA.urlSlug.split('-').at(-1) || 0;
+            const articleBSlugId: number =
+              +articleB.urlSlug.split('-').at(-1) || 0;
+
+            return articleASlugId - articleBSlugId;
+          });
+
+          const lastSlugIndex = +articles.at(-1).urlSlug.split('-').at(-1);
+
+          article.urlSlug += isNaN(lastSlugIndex) ? '-1' : '-' + (lastSlugIndex + 1);
+          // console.log(articles);
+          // console.log(isNaN(lastSlugIndex) ? '-1' : '-' + (lastSlugIndex + 1));
         }
 
         return of(article);
@@ -103,24 +116,46 @@ export class ArticleService {
     createArticleDTO: CreateArticleDTO,
     authorId: number,
   ): Observable<ArticleEntity> {
-    const article: ArticleEntity = new ArticleEntity();
+    return this.getByUrlSlug(urlSlug).pipe(
+      mergeMap((article: ArticleEntity) => {
+        if (!article) {
+          throw new HttpException(
+            `Post with slug '${urlSlug}' was not found!`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
 
-    Object.assign(article, createArticleDTO);
+        if (article.author.id !== authorId) {
+          throw new HttpException(
+            `You are not an author.`,
+            HttpStatus.FORBIDDEN,
+          );
+        }
 
-    if (!createArticleDTO.tagList) {
-      article.tagList = [];
-    }
+        const updatedArticle: ArticleEntity = new ArticleEntity();
+        Object.assign(updatedArticle, article);
+        Object.assign(updatedArticle, createArticleDTO);
 
-    article.titleSlug = this.generateSlugString(createArticleDTO.title);
-    article.urlSlug = article.titleSlug;
+        if (!updatedArticle.tagList) {
+          article.tagList = [];
+        }
 
-    /*return this.generateUrlSlug(article).pipe(
-      mergeMap((newArticle: ArticleEntity) => {
-        if (newArticle.author.)
-      })
-    )*/
+        if (article.title != createArticleDTO.title) {
+          updatedArticle.titleSlug = this.generateSlugString(
+            updatedArticle.title,
+          );
+          updatedArticle.urlSlug = updatedArticle.titleSlug;
 
-    return {} as any;
+          return this.generateUrlSlug(updatedArticle).pipe(
+            mergeMap((newArticle: ArticleEntity) => {
+              return from(this._articleRepository.save(newArticle));
+            }),
+          );
+        } else {
+          return from(this._articleRepository.save(updatedArticle));
+        }
+      }),
+    );
   }
 
   generateSlugString(title: string): string {

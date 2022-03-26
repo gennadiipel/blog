@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -15,6 +16,7 @@ import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { AuthGuard } from 'src/modules/user/guards/auth.guard';
 import { DeleteResult } from 'typeorm';
 import { CreateArticleDTO } from '../DTOs/create-article.dto';
+import { ArticleEntity } from '../entities/article.entity';
 import { ArticleService } from '../services/article.service';
 import { ArticleResponse } from '../types/article-response.interface';
 
@@ -51,5 +53,19 @@ export class ArticleController {
     @User('id') authorId: number,
   ): Observable<DeleteResult> {
     return this._articleService.deleteArticle(urlSlug, authorId);
+  }
+
+  @Put(':urlSlug')
+  @UseGuards(new AuthGuard())
+  updateBySlug(
+    @Param('urlSlug') urlSlug: string,
+    @Body('article') createArticleDTO: CreateArticleDTO,
+    @User('id') authorId: number,
+  ): Observable<ArticleEntity> {
+    return this._articleService.updateArticle(
+      urlSlug,
+      createArticleDTO,
+      authorId,
+    );
   }
 }
