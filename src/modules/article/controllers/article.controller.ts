@@ -10,7 +10,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { from, map, Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { User } from 'src/modules/user/decorators/user.decorator';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { AuthGuard } from 'src/modules/user/guards/auth.guard';

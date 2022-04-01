@@ -79,9 +79,9 @@ export class ArticleService {
 
           const lastSlugIndex = +articles.at(-1).urlSlug.split('-').at(-1);
 
-          article.urlSlug += isNaN(lastSlugIndex) ? '-1' : '-' + (lastSlugIndex + 1);
-          // console.log(articles);
-          // console.log(isNaN(lastSlugIndex) ? '-1' : '-' + (lastSlugIndex + 1));
+          article.urlSlug += isNaN(lastSlugIndex)
+            ? '-1'
+            : '-' + (lastSlugIndex + 1);
         }
 
         return of(article);
